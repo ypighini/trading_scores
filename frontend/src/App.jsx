@@ -1,36 +1,33 @@
-import React, { useEffect, useState } from "react";
-import CryptoTable from "./components/CryptoTable";
+import React, { useState, useEffect } from "react";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import Cryptos from "./pages/Cryptos";
+import Actions from "./pages/Actions";
+import { Routes, Route } from "react-router-dom";
 
 const App = () => {
   const [cryptos, setCryptos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
+  // Fetch des cryptos une fois au montage
   useEffect(() => {
-    const fetchCryptos = async () => {
-      try {
-        const response = await fetch("http://localhost:8000/cryptos"); // ton endpoint backend
-        if (!response.ok) throw new Error("Erreur lors de la récupération des cryptos");
-        const data = await response.json();
-        setCryptos(data);
-      } catch (err) {
-        console.error(err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCryptos();
+    fetch("http://127.0.0.1:8000/cryptos")
+      .then((res) => res.json())
+      .then((data) => setCryptos(data))
+      .catch((err) => console.error("Erreur fetch cryptos:", err));
   }, []);
 
-  if (loading) return <div>Chargement des cryptos...</div>;
-  if (error) return <div>Erreur : {error}</div>;
-
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Tableau Crypto</h1>
-      <CryptoTable cryptos={cryptos} />
+    <div className="min-h-screen flex flex-col bg-[#0f172a] text-[#f1f5f9] font-inter">
+      <Header />
+      <main className="flex-1 p-6">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/cryptos" element={<Cryptos cryptos={cryptos} />} />
+          <Route path="/actions" element={<Actions />} />
+        </Routes>
+      </main>
+      <Footer />
     </div>
   );
 };

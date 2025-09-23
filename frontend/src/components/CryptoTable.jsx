@@ -1,224 +1,269 @@
 import React, { useState, useMemo } from "react";
-import { Search, CandlestickChart } from "lucide-react";
+import { Search } from "lucide-react";
 import clsx from "clsx";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"; // chemin relatif vers ton ui/tabs
 
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableCell
-} from "./ui/table";
-import { Input } from "./ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs";
-
-const CryptoTable = ({ cryptos }) => {
-  const [search, setSearch] = useState("");
+const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
   const [sortConfig, setSortConfig] = useState({ key: "combinedScore", direction: "desc" });
   const [pageUSDT, setPageUSDT] = useState(0);
   const [pageBTC, setPageBTC] = useState(0);
   const [pageInfo, setPageInfo] = useState(0);
+  const [searchUSDT, setSearchUSDT] = useState("");
+  const [searchBTC, setSearchBTC] = useState("");
+  const [searchInfo, setSearchInfo] = useState("");
   const rowsPerPage = 50;
 
-  // --- Filtrage par recherche
-  const filteredCryptos = useMemo(() => {
-    return cryptos.filter(
-      (c) =>
-        (c.code?.toLowerCase().includes(search.toLowerCase()) ||
-         c.name?.toLowerCase().includes(search.toLowerCase()))
-    );
-  }, [cryptos, search]);
+  const prepareData = (data, searchTerm) => {
+    const term = searchTerm.trim().toLowerCase();
+    let filtered = Array.isArray(data) ? data : [];
+    if (term) {
+      filtered = filtered.filter(
+        (c) =>
+          (c.code && String(c.code).toLowerCase().includes(term)) ||
+          (c.name && String(c.name).toLowerCase().includes(term))
+      );
+    }
 
-  // --- Ajout score combiné
-  const withScores = useMemo(() => {
-    return filteredCryptos.map((c) => ({
+    return filtered.map((c) => ({
       ...c,
+      invest_score: Number(c.invest_score || 0),
+      swing_score: Number(c.swing_score || 0),
+      intraday_score: Number(c.intraday_score || 0),
       combinedScore:
-        (c.invest_score || 0) +
-        (c.swing_score || 0) +
-        (c.intraday_score || 0)
+        Number(c.invest_score || 0) +
+        Number(c.swing_score || 0) +
+        Number(c.intraday_score || 0),
     }));
-  }, [filteredCryptos]);
+  };
 
-  // --- Tri
-  const sortedCryptos = useMemo(() => {
-    let sortable = [...withScores];
-    if (sortConfig.key) {
-      sortable.sort((a, b) => {
-        const aValue = a[sortConfig.key] || 0;
-        const bValue = b[sortConfig.key] || 0;
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-    return sortable;
-  }, [withScores, sortConfig]);
-
-  const requestSort = (key) => {
+  const requestSort = (key, data, setData) => {
     let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
+    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
     setSortConfig({ key, direction });
   };
 
-  // --- Filtrage par statut
-  const usdtCryptos = sortedCryptos.filter(
-    (c) =>
-      c.statut === "Traité" &&
-      typeof c.code === "string" &&
-      c.code.endsWith("/USDT")
-  );
-  const btcCryptos = sortedCryptos.filter(
-    (c) =>
-      c.statut === "Traité" &&
-      typeof c.code === "string" &&
-      c.code.endsWith("/BTC")
-  );
-  const infoCryptos = sortedCryptos.filter((c) => c.statut !== "Traité");
+  const renderTable = (data, page, setPage, searchTerm, setSearch, isInfo = false) => {
+    const sorted = useMemo(() => {
+      const arr = [...prepareData(data, searchTerm)];
+      if (!sortConfig.key) return arr;
+      arr.sort((a, b) => {
+        const aV = a[sortConfig.key] ?? 0;
+        const bV = b[sortConfig.key] ?? 0;
+        if (aV < bV) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aV > bV) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
+      });
+      return arr;
+    }, [data, searchTerm, sortConfig]);
 
-  // --- Table générique
-  const renderTable = (data, page, setPage, showName = true, isInfo = false) => {
-    const totalPages = Math.ceil(data.length / rowsPerPage);
-    const paginated = data.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+    const totalPages = Math.max(1, Math.ceil(sorted.length / rowsPerPage));
+    const pageSafe = Math.min(page, Math.max(0, totalPages - 1));
+    const paginated = sorted.slice(pageSafe * rowsPerPage, (pageSafe + 1) * rowsPerPage);
 
     return (
-      <div className="overflow-x-auto border rounded-lg shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {isInfo ? (
-                <>
-                  <TableHead className="text-left">Code</TableHead>
-                  <TableHead className="text-center">Statut</TableHead>
-                  <TableHead className="text-center">Dernier score combiné</TableHead>
-                </>
-              ) : (
-                <>
-                  <TableHead onClick={() => requestSort("name")} className="text-left">Nom</TableHead>
-                  <TableHead onClick={() => requestSort("invest_score")} className="text-center">Investissement</TableHead>
-                  <TableHead onClick={() => requestSort("swing_score")} className="text-center">Swing</TableHead>
-                  <TableHead onClick={() => requestSort("intraday_score")} className="text-center">Intraday</TableHead>
-                  <TableHead onClick={() => requestSort("combinedScore")} className="text-center">Score combiné</TableHead>
-                </>
-              )}
-            </TableRow>
-          </TableHeader>
-          <tbody>
-            {paginated.map((crypto, idx) => (
-              <TableRow
-                key={crypto.code + idx}
-                className={clsx(idx % 2 === 0 ? "bg-white" : "bg-gray-50")}
-              >
+      <div>
+        {/* Recherche spécifique à ce tableau */}
+        <div className="w-full sm:w-80 mb-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+            <input
+              value={searchTerm}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
+              placeholder="Rechercher une paire..."
+              className="pl-10 pr-3 py-2 rounded bg-gray-800 text-white w-full"
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto border rounded-lg shadow-sm mt-2">
+          <table className="min-w-[700px] w-full">
+            <thead>
+              <tr className="bg-gray-800 text-gray-100 font-bold text-lg">
                 {isInfo ? (
                   <>
-                    <TableCell className="font-medium text-left">{crypto.code || "-"}</TableCell>
-                    <TableCell className="text-center">{crypto.statut || "-"}</TableCell>
-                    <TableCell
-                      className={clsx(
-                        "text-center",
-                        crypto.combinedScore > 0
-                          ? "text-green-600"
-                          : crypto.combinedScore < 0
-                          ? "text-red-600"
-                          : "text-gray-500"
-                      )}
-                    >
-                      {crypto.combinedScore !== 0
-                        ? crypto.combinedScore
-                        : "Non noté"}
-                    </TableCell>
+                    <th className="text-left px-4 py-3">Code</th>
+                    <th className="text-center px-4 py-3">Statut</th>
+                    <th className="text-center px-4 py-3">Score combiné</th>
                   </>
                 ) : (
                   <>
-                    <TableCell className="font-medium text-left">{crypto.name || "-"}</TableCell>
-                    <TableCell className={clsx("text-center", (crypto.invest_score || 0) > 0 ? "text-green-600" : "text-red-600")}>
-                      {crypto.invest_score || 0}
-                    </TableCell>
-                    <TableCell className={clsx("text-center", (crypto.swing_score || 0) > 0 ? "text-green-600" : "text-red-600")}>
-                      {crypto.swing_score || 0}
-                    </TableCell>
-                    <TableCell className={clsx("text-center", (crypto.intraday_score || 0) > 0 ? "text-green-600" : "text-red-600")}>
-                      {crypto.intraday_score || 0}
-                    </TableCell>
-                    <TableCell className={clsx("text-center", (crypto.combinedScore || 0) > 0 ? "text-green-700 font-bold" : "text-red-700 font-bold")}>
-                      {crypto.combinedScore || 0}
-                    </TableCell>
+                    <th
+                      onClick={() => requestSort("name")}
+                      className="text-left px-4 py-3 cursor-pointer"
+                    >
+                      Nom
+                    </th>
+                    <th
+                      onClick={() => requestSort("invest_score")}
+                      className="text-center px-4 py-3 cursor-pointer"
+                    >
+                      Investissement
+                    </th>
+                    <th
+                      onClick={() => requestSort("swing_score")}
+                      className="text-center px-4 py-3 cursor-pointer"
+                    >
+                      Swing
+                    </th>
+                    <th
+                      onClick={() => requestSort("intraday_score")}
+                      className="text-center px-4 py-3 cursor-pointer"
+                    >
+                      Intraday
+                    </th>
+                    <th
+                      onClick={() => requestSort("combinedScore")}
+                      className="text-center px-4 py-3 cursor-pointer"
+                    >
+                      Score combiné
+                    </th>
                   </>
                 )}
-              </TableRow>
-            ))}
-          </tbody>
-        </Table>
+              </tr>
+            </thead>
+            <tbody>
+              {paginated.map((c, idx) => (
+                <tr
+                  key={(c.code ?? c.name ?? idx) + idx}
+                  className={clsx(
+                    idx % 2 === 0
+                      ? "bg-gray-900 text-gray-100"
+                      : "bg-gray-800 text-gray-100"
+                  )}
+                >
+                  {isInfo ? (
+                    <>
+                      <td className="px-4 py-3">{c.code ?? "-"}</td>
+                      <td className="text-center px-4 py-3">{c.statut ?? "-"}</td>
+                      <td
+                        className={clsx(
+                          "text-center px-4 py-3 font-bold",
+                          c.combinedScore > 0
+                            ? "text-green-500"
+                            : c.combinedScore < 0
+                            ? "text-red-500"
+                            : "text-gray-400"
+                        )}
+                      >
+                        {c.combinedScore ?? 0}
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-4 py-3">{c.name ?? c.code ?? "-"}</td>
+                      <td
+                        className={clsx(
+                          "text-center px-4 py-3 font-semibold",
+                          (c.invest_score || 0) > 0
+                            ? "text-green-500"
+                            : "text-red-500"
+                        )}
+                      >
+                        {c.invest_score ?? 0}
+                      </td>
+                      <td
+                        className={clsx(
+                          "text-center px-4 py-3 font-semibold",
+                          (c.swing_score || 0) > 0
+                            ? "text-green-500"
+                            : "text-red-500"
+                        )}
+                      >
+                        {c.swing_score ?? 0}
+                      </td>
+                      <td
+                        className={clsx(
+                          "text-center px-4 py-3 font-semibold",
+                          (c.intraday_score || 0) > 0
+                            ? "text-green-500"
+                            : "text-red-500"
+                        )}
+                      >
+                        {c.intraday_score ?? 0}
+                      </td>
+                      <td
+                        className={clsx(
+                          "text-center px-4 py-3 font-bold",
+                          (c.combinedScore || 0) > 0
+                            ? "text-green-400"
+                            : "text-red-400"
+                        )}
+                      >
+                        {c.combinedScore ?? 0}
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-        {/* Pagination */}
-        <div className="flex justify-between items-center mt-2 p-2 text-sm text-gray-600">
-          <button
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(p - 1, 0))}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Précédent
-          </button>
-          <span>
-            Page {page + 1} / {totalPages}
-          </span>
-          <button
-            disabled={page + 1 === totalPages}
-            onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Suivant
-          </button>
+          <div className="flex flex-col sm:flex-row justify-between items-center mt-3 p-2 text-sm gap-2">
+            <div className="flex gap-2 items-center">
+              <button
+                disabled={pageSafe === 0}
+                onClick={() => setPage((p) => Math.max(p - 1, 0))}
+                className="px-3 py-1 rounded bg-gray-700 text-white font-bold disabled:opacity-50"
+              >
+                Précédent
+              </button>
+              <button
+                disabled={pageSafe + 1 >= totalPages}
+                onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
+                className="px-3 py-1 rounded bg-gray-700 text-white font-bold disabled:opacity-50"
+              >
+                Suivant
+              </button>
+            </div>
+            <div className="text-white font-bold">
+              Page {pageSafe + 1} / {totalPages}
+            </div>
+          </div>
         </div>
       </div>
     );
   };
 
+  const last = lastUpdate || new Date().toLocaleString();
+
+  // Filtrage des données par onglet
+  const usdtData = cryptos.filter(
+    (c) => c.statut === "Traité" && typeof c.code === "string" && c.code.endsWith("/USDT")
+  );
+  const btcData = cryptos.filter(
+    (c) => c.statut === "Traité" && typeof c.code === "string" && c.code.endsWith("/BTC")
+  );
+  const infoData = cryptos.filter((c) => c.statut !== "Traité");
+
   return (
     <div className="p-4">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <CandlestickChart className="w-6 h-6 text-blue-600" />
-          Tableau de suivi crypto
-        </h2>
-        <span className="text-sm text-gray-500">Dernière mise à jour : {new Date().toLocaleString()}</span>
-      </div>
-
-      {/* Recherche */}
-      <div className="relative mb-4">
-        <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-        <Input
-          type="text"
-          placeholder="Rechercher une paire..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPageUSDT(0);
-            setPageBTC(0);
-            setPageInfo(0);
-          }}
-          className="pl-8"
-        />
-      </div>
-
-      {/* Onglets */}
-      <Tabs>
-        <TabsList>
-          <TabsTrigger>Paires USDT</TabsTrigger>
-          <TabsTrigger>Paires BTC</TabsTrigger>
-          <TabsTrigger>Informations insuffisantes</TabsTrigger>
+      <Tabs defaultValue={0}>
+        <TabsList
+          className="flex justify-between items-center mb-2"
+          right={<div className="text-white font-bold">Dernière mise à jour : {last}</div>}
+        >
+          <TabsTrigger index={0} className="text-white font-bold text-lg">
+            Paires USDT
+          </TabsTrigger>
+          <TabsTrigger index={1} className="text-white font-bold text-lg">
+            Paires BTC
+          </TabsTrigger>
+          <TabsTrigger index={2} className="text-white font-bold text-lg">
+            Informations insuffisantes
+          </TabsTrigger>
         </TabsList>
+
         <TabsContent index={0}>
-          {renderTable(usdtCryptos, pageUSDT, setPageUSDT)}
+          {renderTable(usdtData, pageUSDT, setPageUSDT, searchUSDT, setSearchUSDT)}
         </TabsContent>
         <TabsContent index={1}>
-          {renderTable(btcCryptos, pageBTC, setPageBTC)}
+          {renderTable(btcData, pageBTC, setPageBTC, searchBTC, setSearchBTC)}
         </TabsContent>
         <TabsContent index={2}>
-          {renderTable(infoCryptos, pageInfo, setPageInfo, false, true)}
+          {renderTable(infoData, pageInfo, setPageInfo, searchInfo, setSearchInfo, true)}
         </TabsContent>
       </Tabs>
     </div>
