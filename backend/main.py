@@ -2,13 +2,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import asyncpg
+from backend.config import Config  # Import config
 
 app = FastAPI()
 
 # ---------- CORS ----------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Frontend en dev
+    allow_origins=Config.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -18,11 +19,11 @@ app.add_middleware(
 async def get_db_pool():
     if not hasattr(app.state, "pool"):
         app.state.pool = await asyncpg.create_pool(
-            user="postgres",
-            password="lebichon1332",
-            database="trading_scores",
-            host="localhost",
-            port=5432
+            user=Config.DB_USER,
+            password=Config.DB_PASSWORD,
+            database=Config.DB_NAME,
+            host=Config.DB_HOST,
+            port=Config.DB_PORT,
         )
     return app.state.pool
 
@@ -40,10 +41,7 @@ async def get_assets():
 @app.get("/assets/{asset_id}")
 async def get_asset(asset_id: int):
     pool = await get_db_pool()
-    row = await pool.fetchrow(
-        "SELECT * FROM assets_scores WHERE id = $1",
-        asset_id
-    )
+    row = await pool.fetchrow("SELECT * FROM assets_scores WHERE id = $1", asset_id)
     if not row:
         raise HTTPException(status_code=404, detail="Asset not found")
     return dict(row)
@@ -79,7 +77,7 @@ async def get_crypto(code: str):
     return dict(row)
 
 # ---------- STATIC FRONTEND ----------
-app.mount("/app", StaticFiles(directory="static", html=True), name="static")
+app.mount("/app", StaticFiles(directory=Config.STATIC_DIR, html=True), name="static")
 
 # ---------- CLEANUP ----------
 @app.on_event("shutdown")

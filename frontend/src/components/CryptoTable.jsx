@@ -36,7 +36,7 @@ const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
     }));
   };
 
-  const requestSort = (key, data, setData) => {
+  const requestSort = (key) => {
     let direction = "asc";
     if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
     setSortConfig({ key, direction });
@@ -227,7 +227,17 @@ const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
     );
   };
 
-  const last = lastUpdate || new Date().toLocaleString();
+  // Fonction utilitaire : trouver la date max dans cryptos
+  const getMaxLastUpdated = () => {
+    if (!Array.isArray(cryptos) || cryptos.length === 0) return null;
+    const timestamps = cryptos
+      .map((c) => (c.last_updated ? new Date(c.last_updated).getTime() : null))
+      .filter((t) => t && !Number.isNaN(t));
+    if (timestamps.length === 0) return null;
+    return new Date(Math.max(...timestamps)).toLocaleString();
+  };
+
+  const last = getMaxLastUpdated() || lastUpdate || "—";
 
   // Filtrage des données par onglet
   const usdtData = cryptos.filter(

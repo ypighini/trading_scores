@@ -9,13 +9,16 @@ import { Routes, Route } from "react-router-dom";
 const App = () => {
   const [cryptos, setCryptos] = useState([]);
 
+  // Récupération de l'URL de l'API depuis le .env
+  const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
   // Fetch des cryptos une fois au montage
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/cryptos")
+    fetch(`${API_URL}/cryptos`)
       .then((res) => res.json())
       .then((data) => setCryptos(data))
       .catch((err) => console.error("Erreur fetch cryptos:", err));
-  }, []);
+  }, [API_URL]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0f172a] text-[#f1f5f9] font-inter">
