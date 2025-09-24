@@ -11,14 +11,14 @@ const Home = () => {
       <img
         src={logo}
         alt="ScanPicking Logo"
-        className="w-72 h-auto object-contain" // largeur x3 environ
+        className="w-96 h-auto object-contain" // largeur x3 environ
       />
 
       <h1 className="text-4xl font-bold text-[#38bdf8]">
-        Analyse multi-timeframes pour Cryptos & Actions
+        Faîtes en sorte que les opportunités viennent à vous
       </h1>
       <p className="text-gray-300 max-w-xl">
-        Suivez facilement les scores combinés, tendances et divergences RSI sur toutes vos cryptos et actions favorites.
+        Cryptos, actions, métaux, monnaies : identifier les actifs les plus prometteurs grâce à un système de notation complet et novateur
       </p>
       <button
         onClick={() => navigate("/cryptos")}
