@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import ReactCountryFlag from "react-country-flag";
+import logo from "../assets/logo.png"; // Assure-toi que le chemin est correct
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -35,9 +36,11 @@ export default function Header() {
         {/* Logo totalement à gauche */}
         <div className="flex items-center flex-shrink-0">
           <Link to="/" className="flex items-center">
-            <span className="text-2xl font-bold text-blue-400 tracking-wide">
-              Scan<span className="text-white">Picking</span>
-            </span>
+            <img
+              src={logo}
+              alt="ScanPicking Logo"
+              className="h-10 w-auto object-contain" // Hauteur fixe pour ne pas changer la taille du header
+            />
           </Link>
         </div>
 

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { Search } from "lucide-react";
+import React, { useState, useMemo } from "react"; 
+import { Search, ExternalLink } from "lucide-react";
 import clsx from "clsx";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs"; // chemin relatif vers ton ui/tabs
 
@@ -20,20 +20,27 @@ const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
       filtered = filtered.filter(
         (c) =>
           (c.code && String(c.code).toLowerCase().includes(term)) ||
-          (c.name && String(c.name).toLowerCase().includes(term))
+          (c.name && String(c.name).toLowerCase().includes(term)) ||
+          (c.site_name && String(c.site_name).toLowerCase().includes(term))
       );
     }
 
-    return filtered.map((c) => ({
-      ...c,
-      invest_score: Number(c.invest_score || 0),
-      swing_score: Number(c.swing_score || 0),
-      intraday_score: Number(c.intraday_score || 0),
-      combinedScore:
-        Number(c.invest_score || 0) +
-        Number(c.swing_score || 0) +
-        Number(c.intraday_score || 0),
-    }));
+    return filtered.map((c) => {
+      const inv = c.invest_score !== null ? Number(c.invest_score) : null;
+      const swing = c.swing_score !== null ? Number(c.swing_score) : null;
+      const intra = c.intraday_score !== null ? Number(c.intraday_score) : null;
+
+      return {
+        ...c,
+        invest_score: inv,
+        swing_score: swing,
+        intraday_score: intra,
+        combinedScore:
+          (inv ?? 0) +
+          (swing ?? 0) +
+          (intra ?? 0),
+      };
+    });
   };
 
   const requestSort = (key) => {
@@ -60,9 +67,13 @@ const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
     const pageSafe = Math.min(page, Math.max(0, totalPages - 1));
     const paginated = sorted.slice(pageSafe * rowsPerPage, (pageSafe + 1) * rowsPerPage);
 
+    const renderScoreCell = (val) => {
+      if (val === null) return <span className="text-gray-500 italic">No data</span>;
+      return val;
+    };
+
     return (
       <div>
-        {/* Recherche spécifique à ce tableau */}
         <div className="w-full sm:w-80 mb-2">
           <div className="relative">
             <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
@@ -87,6 +98,7 @@ const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
                     <th className="text-left px-4 py-3">Code</th>
                     <th className="text-center px-4 py-3">Statut</th>
                     <th className="text-center px-4 py-3">Score combiné</th>
+                    <th className="text-left px-4 py-3">Site</th>
                   </>
                 ) : (
                   <>
@@ -120,6 +132,7 @@ const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
                     >
                       Score combiné
                     </th>
+                    <th className="text-left px-4 py-3">Site</th>
                   </>
                 )}
               </tr>
@@ -150,6 +163,20 @@ const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
                       >
                         {c.combinedScore ?? 0}
                       </td>
+                      <td className="px-4 py-3">
+                        {c.site_name ? (
+                          <a
+                            href={c.site_url ?? "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-blue-400 hover:underline"
+                          >
+                            {c.site_name} <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
                     </>
                   ) : (
                     <>
@@ -157,42 +184,64 @@ const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
                       <td
                         className={clsx(
                           "text-center px-4 py-3 font-semibold",
-                          (c.invest_score || 0) > 0
+                          c.invest_score > 0
                             ? "text-green-500"
-                            : "text-red-500"
+                            : c.invest_score < 0
+                            ? "text-red-500"
+                            : "text-gray-400"
                         )}
                       >
-                        {c.invest_score ?? 0}
+                        {renderScoreCell(c.invest_score)}
                       </td>
                       <td
                         className={clsx(
                           "text-center px-4 py-3 font-semibold",
-                          (c.swing_score || 0) > 0
+                          c.swing_score > 0
                             ? "text-green-500"
-                            : "text-red-500"
+                            : c.swing_score < 0
+                            ? "text-red-500"
+                            : "text-gray-400"
                         )}
                       >
-                        {c.swing_score ?? 0}
+                        {renderScoreCell(c.swing_score)}
                       </td>
                       <td
                         className={clsx(
                           "text-center px-4 py-3 font-semibold",
-                          (c.intraday_score || 0) > 0
+                          c.intraday_score > 0
                             ? "text-green-500"
-                            : "text-red-500"
+                            : c.intraday_score < 0
+                            ? "text-red-500"
+                            : "text-gray-400"
                         )}
                       >
-                        {c.intraday_score ?? 0}
+                        {renderScoreCell(c.intraday_score)}
                       </td>
                       <td
                         className={clsx(
                           "text-center px-4 py-3 font-bold",
-                          (c.combinedScore || 0) > 0
+                          c.combinedScore > 0
                             ? "text-green-400"
-                            : "text-red-400"
+                            : c.combinedScore < 0
+                            ? "text-red-400"
+                            : "text-gray-400"
                         )}
                       >
                         {c.combinedScore ?? 0}
+                      </td>
+                      <td className="px-4 py-3">
+                        {c.site_name ? (
+                          <a
+                            href={c.site_url ?? "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-blue-400 hover:underline"
+                          >
+                            {c.site_name} <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          "-"
+                        )}
                       </td>
                     </>
                   )}
@@ -227,7 +276,6 @@ const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
     );
   };
 
-  // Fonction utilitaire : trouver la date max dans cryptos
   const getMaxLastUpdated = () => {
     if (!Array.isArray(cryptos) || cryptos.length === 0) return null;
     const timestamps = cryptos
@@ -239,7 +287,6 @@ const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
 
   const last = getMaxLastUpdated() || lastUpdate || "—";
 
-  // Filtrage des données par onglet
   const usdtData = cryptos.filter(
     (c) => c.statut === "Traité" && typeof c.code === "string" && c.code.endsWith("/USDT")
   );

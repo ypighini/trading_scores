@@ -4,6 +4,7 @@ import Footer from "./components/Footer.jsx";
 import Home from "./pages/Home.jsx";
 import Cryptos from "./pages/Cryptos.jsx";
 import Actions from "./pages/Actions.jsx";
+import CGU from "./pages/CGU.jsx"; // <-- Import de la page CGU
 import { Routes, Route, useLocation } from "react-router-dom";
 
 const App = () => {
@@ -30,6 +31,7 @@ const App = () => {
             <Routes>
               <Route path="/cryptos" element={<Cryptos cryptos={cryptos} />} />
               <Route path="/actions" element={<Actions />} />
+              <Route path="/cgu" element={<CGU />} /> {/* <-- Route CGU ajoutée */}
             </Routes>
           </div>
         )}

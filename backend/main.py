@@ -52,7 +52,7 @@ async def get_cryptos():
     pool = await get_db_pool()
     rows = await pool.fetch(
         """
-        SELECT code, name, invest_score, swing_score, intraday_score, last_updated, statut
+        SELECT code, name, invest_score, swing_score, intraday_score, site_name, site_url, last_updated, statut
         FROM assets_scores
         WHERE asset_type = 'crypto'
         AND (code ILIKE '%/USDT' OR code ILIKE '%/BTC')
@@ -66,7 +66,7 @@ async def get_crypto(code: str):
     pool = await get_db_pool()
     row = await pool.fetchrow(
         """
-        SELECT code, name, invest_score, swing_score, intraday_score, last_updated, statut
+        SELECT code, name, invest_score, swing_score, intraday_score, site_name, site_url, last_updated, statut
         FROM assets_scores
         WHERE asset_type = 'crypto' AND code = $1
         """,
