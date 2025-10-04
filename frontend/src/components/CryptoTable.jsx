@@ -90,187 +90,180 @@ const CryptoTable = ({ cryptos = [], lastUpdate = null }) => {
         </div>
 
         <div className="overflow-x-auto border rounded-lg shadow-sm mt-2">
-          <table className="min-w-[700px] w-full">
-            <thead>
-              <tr className="bg-gray-800 text-gray-100 font-bold text-lg">
-                {isInfo ? (
-                  <>
-                    <th className="text-left px-4 py-3">Code</th>
-                    <th className="text-center px-4 py-3">Statut</th>
-                    <th className="text-center px-4 py-3">Score combiné</th>
-                    <th className="text-left px-4 py-3">Site</th>
-                  </>
-                ) : (
-                  <>
-                    <th
-                      onClick={() => requestSort("name")}
-                      className="text-left px-4 py-3 cursor-pointer"
+          {sorted.length === 0 ? (
+            <div className="text-center text-gray-400 p-6 italic">
+              Aucune donnée disponible pour cet onglet.
+            </div>
+          ) : (
+            <>
+              <table className="min-w-[700px] w-full">
+                <thead>
+                  <tr className="bg-gray-800 text-gray-100 font-bold text-lg">
+                    {isInfo ? (
+                      <>
+                        <th className="text-left px-4 py-3">Code</th>
+                        <th className="text-center px-4 py-3">Statut</th>
+                        <th className="text-center px-4 py-3">Score combiné</th>
+                      </>
+                    ) : (
+                      <>
+                        <th
+                          onClick={() => requestSort("name")}
+                          className="text-left px-4 py-3 cursor-pointer"
+                        >
+                          Nom
+                        </th>
+                        <th
+                          onClick={() => requestSort("invest_score")}
+                          className="text-center px-4 py-3 cursor-pointer"
+                        >
+                          Investissement
+                        </th>
+                        <th
+                          onClick={() => requestSort("swing_score")}
+                          className="text-center px-4 py-3 cursor-pointer"
+                        >
+                          Swing
+                        </th>
+                        <th
+                          onClick={() => requestSort("intraday_score")}
+                          className="text-center px-4 py-3 cursor-pointer"
+                        >
+                          Intraday
+                        </th>
+                        <th
+                          onClick={() => requestSort("combinedScore")}
+                          className="text-center px-4 py-3 cursor-pointer"
+                        >
+                          Score combiné
+                        </th>
+                        <th className="text-left px-4 py-3">Site</th>
+                      </>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map((c, idx) => (
+                    <tr
+                      key={(c.code ?? c.name ?? idx) + idx}
+                      className={clsx(
+                        idx % 2 === 0
+                          ? "bg-gray-900 text-gray-100"
+                          : "bg-gray-800 text-gray-100"
+                      )}
                     >
-                      Nom
-                    </th>
-                    <th
-                      onClick={() => requestSort("invest_score")}
-                      className="text-center px-4 py-3 cursor-pointer"
-                    >
-                      Investissement
-                    </th>
-                    <th
-                      onClick={() => requestSort("swing_score")}
-                      className="text-center px-4 py-3 cursor-pointer"
-                    >
-                      Swing
-                    </th>
-                    <th
-                      onClick={() => requestSort("intraday_score")}
-                      className="text-center px-4 py-3 cursor-pointer"
-                    >
-                      Intraday
-                    </th>
-                    <th
-                      onClick={() => requestSort("combinedScore")}
-                      className="text-center px-4 py-3 cursor-pointer"
-                    >
-                      Score combiné
-                    </th>
-                    <th className="text-left px-4 py-3">Site</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map((c, idx) => (
-                <tr
-                  key={(c.code ?? c.name ?? idx) + idx}
-                  className={clsx(
-                    idx % 2 === 0
-                      ? "bg-gray-900 text-gray-100"
-                      : "bg-gray-800 text-gray-100"
-                  )}
-                >
-                  {isInfo ? (
-                    <>
-                      <td className="px-4 py-3">{c.code ?? "-"}</td>
-                      <td className="text-center px-4 py-3">{c.statut ?? "-"}</td>
-                      <td
-                        className={clsx(
-                          "text-center px-4 py-3 font-bold",
-                          c.combinedScore > 0
-                            ? "text-green-500"
-                            : c.combinedScore < 0
-                            ? "text-red-500"
-                            : "text-gray-400"
-                        )}
-                      >
-                        {c.combinedScore ?? 0}
-                      </td>
-                      <td className="px-4 py-3">
-                        {c.site_name ? (
-                          <a
-                            href={c.site_url ?? "#"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-blue-400 hover:underline"
+                      {isInfo ? (
+                        <>
+                          <td className="px-4 py-3">{c.code ?? "-"}</td>
+                          <td className="text-center px-4 py-3">{c.statut ?? "-"}</td>
+                          <td
+                            className={clsx(
+                              "text-center px-4 py-3 font-bold",
+                              c.combinedScore > 0
+                                ? "text-green-500"
+                                : c.combinedScore < 0
+                                ? "text-red-500"
+                                : "text-gray-400"
+                            )}
                           >
-                            {c.site_name} <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-4 py-3">{c.name ?? c.code ?? "-"}</td>
-                      <td
-                        className={clsx(
-                          "text-center px-4 py-3 font-semibold",
-                          c.invest_score > 0
-                            ? "text-green-500"
-                            : c.invest_score < 0
-                            ? "text-red-500"
-                            : "text-gray-400"
-                        )}
-                      >
-                        {renderScoreCell(c.invest_score)}
-                      </td>
-                      <td
-                        className={clsx(
-                          "text-center px-4 py-3 font-semibold",
-                          c.swing_score > 0
-                            ? "text-green-500"
-                            : c.swing_score < 0
-                            ? "text-red-500"
-                            : "text-gray-400"
-                        )}
-                      >
-                        {renderScoreCell(c.swing_score)}
-                      </td>
-                      <td
-                        className={clsx(
-                          "text-center px-4 py-3 font-semibold",
-                          c.intraday_score > 0
-                            ? "text-green-500"
-                            : c.intraday_score < 0
-                            ? "text-red-500"
-                            : "text-gray-400"
-                        )}
-                      >
-                        {renderScoreCell(c.intraday_score)}
-                      </td>
-                      <td
-                        className={clsx(
-                          "text-center px-4 py-3 font-bold",
-                          c.combinedScore > 0
-                            ? "text-green-400"
-                            : c.combinedScore < 0
-                            ? "text-red-400"
-                            : "text-gray-400"
-                        )}
-                      >
-                        {c.combinedScore ?? 0}
-                      </td>
-                      <td className="px-4 py-3">
-                        {c.site_name ? (
-                          <a
-                            href={c.site_url ?? "#"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-blue-400 hover:underline"
+                            {c.combinedScore ?? 0}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-3">{c.name ?? c.code ?? "-"}</td>
+                          <td
+                            className={clsx(
+                              "text-center px-4 py-3 font-semibold",
+                              c.invest_score > 0
+                                ? "text-green-500"
+                                : c.invest_score < 0
+                                ? "text-red-500"
+                                : "text-gray-400"
+                            )}
                           >
-                            {c.site_name} <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                    </>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                            {renderScoreCell(c.invest_score)}
+                          </td>
+                          <td
+                            className={clsx(
+                              "text-center px-4 py-3 font-semibold",
+                              c.swing_score > 0
+                                ? "text-green-500"
+                                : c.swing_score < 0
+                                ? "text-red-500"
+                                : "text-gray-400"
+                            )}
+                          >
+                            {renderScoreCell(c.swing_score)}
+                          </td>
+                          <td
+                            className={clsx(
+                              "text-center px-4 py-3 font-semibold",
+                              c.intraday_score > 0
+                                ? "text-green-500"
+                                : c.intraday_score < 0
+                                ? "text-red-500"
+                                : "text-gray-400"
+                            )}
+                          >
+                            {renderScoreCell(c.intraday_score)}
+                          </td>
+                          <td
+                            className={clsx(
+                              "text-center px-4 py-3 font-bold",
+                              c.combinedScore > 0
+                                ? "text-green-400"
+                                : c.combinedScore < 0
+                                ? "text-red-400"
+                                : "text-gray-400"
+                            )}
+                          >
+                            {c.combinedScore ?? 0}
+                          </td>
+                          <td className="px-4 py-3">
+                            {c.site_name ? (
+                              <a
+                                href={c.site_url ?? "#"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-blue-400 hover:underline"
+                              >
+                                {c.site_name} <ExternalLink className="w-3 h-3" />
+                              </a>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-          <div className="flex flex-col sm:flex-row justify-between items-center mt-3 p-2 text-sm gap-2">
-            <div className="flex gap-2 items-center">
-              <button
-                disabled={pageSafe === 0}
-                onClick={() => setPage((p) => Math.max(p - 1, 0))}
-                className="px-3 py-1 rounded bg-gray-700 text-white font-bold disabled:opacity-50"
-              >
-                Précédent
-              </button>
-              <button
-                disabled={pageSafe + 1 >= totalPages}
-                onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
-                className="px-3 py-1 rounded bg-gray-700 text-white font-bold disabled:opacity-50"
-              >
-                Suivant
-              </button>
-            </div>
-            <div className="text-white font-bold">
-              Page {pageSafe + 1} / {totalPages}
-            </div>
-          </div>
+              <div className="flex flex-col sm:flex-row justify-between items-center mt-3 p-2 text-sm gap-2">
+                <div className="flex gap-2 items-center">
+                  <button
+                    disabled={pageSafe === 0}
+                    onClick={() => setPage((p) => Math.max(p - 1, 0))}
+                    className="px-3 py-1 rounded bg-gray-700 text-white font-bold disabled:opacity-50"
+                  >
+                    Précédent
+                  </button>
+                  <button
+                    disabled={pageSafe + 1 >= totalPages}
+                    onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
+                    className="px-3 py-1 rounded bg-gray-700 text-white font-bold disabled:opacity-50"
+                  >
+                    Suivant
+                  </button>
+                </div>
+                <div className="text-white font-bold">
+                  Page {pageSafe + 1} / {totalPages}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
